@@ -9,6 +9,41 @@ const COLOR_INACTIVE = "#bdbdbd";
 const COLOR_END = "#f44336";
 const COLOR_FIXED = "#9c27b0";
 
+function RouteStopMarker({ village, overrides, orderIndex, isEnd }) {
+    const markerRef = useRef(null);
+    const coords = resolveVillageCoord(village.kato, overrides);
+
+    useEffect(() => {
+        if (markerRef.current) {
+            markerRef.current.openPopup();
+        }
+    }, [village.id]);
+
+    if (!coords) return null;
+
+    return (
+        <CircleMarker
+            ref={markerRef}
+            center={[coords.lat, coords.lng]}
+            radius={12}
+            pathOptions={{
+                fillColor: "#1976d2",
+                color: "#ffffff",
+                weight: 4,
+                fillOpacity: 1
+            }}
+        >
+            <Popup>
+                <strong>{village.name}</strong>
+                <br />
+                <small style={{ color: "#1976d2", fontWeight: "bold" }}>
+                    {isEnd ? `🏁 Точка Б · #${orderIndex}` : `Остановка #${orderIndex}`}
+                </small>
+            </Popup>
+        </CircleMarker>
+    );
+}
+
 function SelectedVillageMarker({ village, overrides }) {
     const map = useMap();
     const markerRef = useRef(null);
@@ -60,6 +95,7 @@ function VillageLayer() {
         selectedHub,
         selectedBranch,
         selectedVillage,
+        selectedRouteStopId,
         mapAddVillageMode,
         coordinateEditMode,
         villageCoordinateOverrides,
@@ -98,6 +134,11 @@ function VillageLayer() {
         <>
             {hubVillages.map(village => {
                 if (selectedVillage?.kato === village.kato && !coordinateEditMode) return null;
+                if (
+                    selectedRouteStopId === village.id
+                    && selectedBranch
+                    && !coordinateEditMode
+                ) return null;
 
                 const coords = resolveVillageCoord(village.kato, villageCoordinateOverrides);
                 if (!coords) return null;
@@ -222,6 +263,21 @@ function VillageLayer() {
                     </CircleMarker>
                 );
             })}
+
+            {selectedRouteStopId && selectedBranch && !coordinateEditMode && (() => {
+                const stopVillage = villages.find(v => v.id === selectedRouteStopId);
+                if (!stopVillage) return null;
+                const orderIndex = branchVillageIds.indexOf(selectedRouteStopId) + 1;
+                const isEnd = selectedRouteStopId === lastVillageId;
+                return (
+                    <RouteStopMarker
+                        village={stopVillage}
+                        overrides={villageCoordinateOverrides}
+                        orderIndex={orderIndex}
+                        isEnd={isEnd}
+                    />
+                );
+            })()}
 
             {selectedVillage && !selectedBranch && !coordinateEditMode && (
                 <SelectedVillageMarker

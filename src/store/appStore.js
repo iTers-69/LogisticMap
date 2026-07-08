@@ -72,6 +72,9 @@ const useAppStore = create((set) => ({
 
     selectedVillage: null,
 
+    /** id села, выбранного в списке остановок маршрута */
+    selectedRouteStopId: null,
+
     activeTab: "hubs",
 
     customRouteStart: null,
@@ -206,6 +209,7 @@ const useAppStore = create((set) => ({
             selectedHub: hub,
             selectedBranch: null,
             selectedVillage: null,
+            selectedRouteStopId: null,
             customRouteStart: null,
             customRouteEnd: null,
             customRouteData: null,
@@ -217,6 +221,7 @@ const useAppStore = create((set) => ({
         set((state) => ({
             selectedBranch: branch,
             selectedHub: state.hubs.find(h => h.kato === branch.hubKato) ?? state.selectedHub,
+            selectedRouteStopId: null,
             customRouteStart: null,
             customRouteEnd: null,
             customRouteData: null,
@@ -229,6 +234,7 @@ const useAppStore = create((set) => ({
     selectVillage: (village) =>
         set((state) => ({
             selectedVillage: village,
+            selectedRouteStopId: null,
             selectedHub: state.selectedHub?.kato === village.hubKato
                 ? state.selectedHub
                 : null,
@@ -239,6 +245,9 @@ const useAppStore = create((set) => ({
             mapAddVillageMode: false,
             coordinateEditMode: false
         })),
+
+    selectRouteStop: (villageId) =>
+        set({ selectedRouteStopId: villageId }),
 
     selectLogistician: (logistician) =>
         set({

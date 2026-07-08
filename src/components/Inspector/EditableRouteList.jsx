@@ -3,7 +3,16 @@ import useAppStore from "../../store/appStore";
 import { resolveVillageCoord } from "../../services/coordinatesService";
 
 function EditableRouteList({ branchId, villageIds, hubKato, canEdit = true }) {
-    const { villages, branches, updateBranchVillages, mapAddVillageMode, setMapAddVillageMode, villageCoordinateOverrides } = useAppStore();
+    const {
+        villages,
+        branches,
+        updateBranchVillages,
+        mapAddVillageMode,
+        setMapAddVillageMode,
+        villageCoordinateOverrides,
+        selectedRouteStopId,
+        selectRouteStop
+    } = useAppStore();
     const [dragIndex, setDragIndex] = useState(null);
     const [overIndex, setOverIndex] = useState(null);
     const [addSearch, setAddSearch] = useState("");
@@ -95,8 +104,22 @@ function EditableRouteList({ branchId, villageIds, hubKato, canEdit = true }) {
 
                 {orderedVillages.map((village, index) => {
                     const isEnd = village.id === lastId;
+                    const isSelected = selectedRouteStopId === village.id;
                     const isDragging = dragIndex === index;
                     const isOver = overIndex === index && dragIndex !== null && dragIndex !== index;
+
+                    const rowStyle = isDragging
+                        ? { border: "1px solid #ddd", background: "#fff3e0" }
+                        : isSelected
+                        ? {
+                            border: "2px solid #1976d2",
+                            background: "#eef5ff"
+                        }
+                        : isEnd
+                            ? { border: "2px solid #f44336", background: "#fff5f5" }
+                            : isOver
+                                ? { border: "2px dashed #1976d2", background: "#e3f2fd" }
+                                : { border: "1px solid #ddd", background: "#fff" };
 
                     return (
                         <div
@@ -106,6 +129,7 @@ function EditableRouteList({ branchId, villageIds, hubKato, canEdit = true }) {
                             onDragOver={canEdit ? (e) => handleDragOver(e, index) : undefined}
                             onDrop={canEdit ? () => handleDrop(index) : undefined}
                             onDragEnd={canEdit ? handleDragEnd : undefined}
+                            onClick={() => selectRouteStop(village.id)}
                             style={{
                                 display: "flex",
                                 alignItems: "center",
@@ -113,43 +137,52 @@ function EditableRouteList({ branchId, villageIds, hubKato, canEdit = true }) {
                                 padding: "8px 6px",
                                 marginBottom: 4,
                                 borderRadius: 6,
-                                border: isEnd ? "2px solid #f44336" : isOver ? "2px dashed #1976d2" : "1px solid #ddd",
-                                background: isDragging ? "#fff3e0" : isEnd ? "#fff5f5" : isOver ? "#e3f2fd" : "#fff",
-                                cursor: canEdit ? "grab" : "default",
-                                opacity: isDragging ? 0.5 : 1
+                                cursor: "pointer",
+                                opacity: isDragging ? 0.5 : 1,
+                                ...rowStyle
                             }}
                         >
                             {canEdit && (
-                                <span style={{ color: "#999", fontSize: 12, width: 16 }}>⠿</span>
+                                <span
+                                    style={{ color: "#999", fontSize: 12, width: 16, cursor: "grab" }}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    ⠿
+                                </span>
                             )}
                             <span style={{
                                 minWidth: 20,
                                 fontWeight: "bold",
                                 fontSize: 12,
-                                color: "#1976d2"
+                                color: isSelected ? "#1565c0" : "#1976d2"
                             }}>
                                 {index + 1}
                             </span>
-                            <span style={{ flex: 1, fontSize: 13 }}>
+                            <span style={{
+                                flex: 1,
+                                fontSize: 13,
+                                fontWeight: isSelected ? "bold" : "normal",
+                                color: isSelected ? "#1565c0" : "inherit"
+                            }}>
                                 {village.name}
                                 {isEnd && " 🏁"}
                             </span>
                             {canEdit && (
                                 <>
                             <button
-                                onClick={() => moveItem(index, -1)}
+                                onClick={(e) => { e.stopPropagation(); moveItem(index, -1); }}
                                 disabled={index === 0}
                                 title="Вверх"
                                 style={btnSmall}
                             >↑</button>
                             <button
-                                onClick={() => moveItem(index, 1)}
+                                onClick={(e) => { e.stopPropagation(); moveItem(index, 1); }}
                                 disabled={index === villageIds.length - 1}
                                 title="Вниз"
                                 style={btnSmall}
                             >↓</button>
                             <button
-                                onClick={() => removeItem(index)}
+                                onClick={(e) => { e.stopPropagation(); removeItem(index); }}
                                 title="Удалить"
                                 style={{ ...btnSmall, color: "#f44336" }}
                             >✕</button>
