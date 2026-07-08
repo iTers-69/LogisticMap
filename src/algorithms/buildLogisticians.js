@@ -1,44 +1,22 @@
-import { createLogistician } from "../models/logisticianModel";
+import { applyLogisticianAssignments } from "../services/logisticianAssignmentService.js";
 
-export default function buildLogisticians(branches) {
-
-    const names = [
-
-        "Татьяна",
-
-        "Акмарал",
-
-        "Канат",
-
-        "Эльмира"
-
-    ];
-
-    const logisticians = names.map((name, index) =>
-
-        createLogistician({
-
-            id: index + 1,
-
-            name
-
-        })
-
+/**
+ * Назначает логистов веткам по хабу (см. logisticianAssignmentService).
+ * Сохраняет существующий список логистов, добавляет недостающих (в т.ч. Лауру).
+ */
+export default function buildLogisticians(branches, existingLogisticians = []) {
+    const { branches: assigned, logisticians } = applyLogisticianAssignments(
+        branches,
+        existingLogisticians
     );
 
-    branches.forEach((branch, index) => {
-
-        const logistician =
-            logisticians[index % logisticians.length];
-
-        logistician.branchIds.push(branch.id);
-
-        logistician.totalVillages += branch.totalStops;
-
-        branch.logisticianId = logistician.id;
-
+    const byId = new Map(assigned.map(b => [b.id, b]));
+    branches.forEach(branch => {
+        const updated = byId.get(branch.id);
+        if (updated) {
+            branch.logisticianId = updated.logisticianId;
+        }
     });
 
     return logisticians;
-
 }

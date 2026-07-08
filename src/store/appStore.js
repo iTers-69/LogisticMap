@@ -2,8 +2,8 @@ import { create } from "zustand";
 import { createBranch } from "../models/branchModel";
 import hubCoordinates from "../data/hubCoordinates";
 import { movePoint } from "../../tools/geoUtils.js";
-import buildLogisticians from "../algorithms/buildLogisticians.js";
 import { buildHubBranches } from "../services/branchBuilderService.js";
+import { applyLogisticianAssignments } from "../services/logisticianAssignmentService.js";
 import { resolveVillageCoord } from "../services/coordinatesService.js";
 import {
     applyHubAssignments,
@@ -514,19 +514,24 @@ const useAppStore = create((set) => ({
                 state.villageCoordinateOverrides,
                 state.branches
             );
-            const logisticians = buildLogisticians(branches);
+
+            const { branches: assignedBranches, logisticians } = applyLogisticianAssignments(
+                branches,
+                state.logisticians
+            );
+
             const hubBranchIds = new Set(
-                branches.filter(b => b.hubKato === hubKato).map(b => b.id)
+                assignedBranches.filter(b => b.hubKato === hubKato).map(b => b.id)
             );
             const selectedBranch = state.selectedBranch
                 && hubBranchIds.has(state.selectedBranch.id)
-                ? branches.find(b => b.id === state.selectedBranch.id) ?? null
+                ? assignedBranches.find(b => b.id === state.selectedBranch.id) ?? null
                 : state.selectedBranch?.hubKato === hubKato
                     ? null
                     : state.selectedBranch;
 
             return {
-                branches,
+                branches: assignedBranches,
                 logisticians,
                 selectedBranch,
                 branchRouteData: selectedBranch ? state.branchRouteData : null,
@@ -547,9 +552,14 @@ const useAppStore = create((set) => ({
                 );
             });
 
-            return {
+            const { branches: assignedBranches, logisticians } = applyLogisticianAssignments(
                 branches,
-                logisticians: buildLogisticians(branches),
+                state.logisticians
+            );
+
+            return {
+                branches: assignedBranches,
+                logisticians,
                 selectedBranch: null,
                 branchRouteData: null,
                 routeAnimation: { playing: false, progress: 0, speed: 1 }
