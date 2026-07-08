@@ -168,6 +168,7 @@ function RoutePanel() {
 
         rebuildHubBranches(selectedHub.kato);
 
+        // zustand set синхронный — сразу сохраняем с актуальными логистами
         const state = useAppStore.getState();
         await persistAppData({
             hubs: state.hubs,
@@ -439,7 +440,7 @@ function RoutePanel() {
                                                     >
                                                         <span style={{ fontSize: 11, color: "#777" }}>Логист:</span>
                                                         <select
-                                                            value={branch.logisticianId || ""}
+                                                            value={branch.logisticianId != null ? String(branch.logisticianId) : ""}
                                                             onChange={(e) => {
                                                                 const newId = Number(e.target.value);
                                                                 if (newId) {

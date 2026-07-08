@@ -3,7 +3,7 @@ import { createBranch } from "../models/branchModel";
 import hubCoordinates from "../data/hubCoordinates";
 import { movePoint } from "../../tools/geoUtils.js";
 import { buildHubBranches } from "../services/branchBuilderService.js";
-import { applyLogisticianAssignments } from "../services/logisticianAssignmentService.js";
+import { applyLogisticianAssignments, normalizeLogisticianId } from "../services/logisticianAssignmentService.js";
 import { resolveVillageCoord } from "../services/coordinatesService.js";
 import {
     applyHubAssignments,
@@ -42,16 +42,23 @@ function buildCoordinatesMap(villages, overrides) {
     return map;
 }
 
-function rebuildBranchesForHub(hub, villages, overrides, existingBranches) {
+function rebuildBranchesForHub(hub, villages, overrides, existingBranches, logisticians) {
     const hubCoords = hubCoordinates[hub.kato];
-    if (!hubCoords) return existingBranches;
+    if (!hubCoords) return { branches: existingBranches, logisticians };
 
     const hubVillages = villages.filter(v => v.hubKato === hub.kato);
     const coordinates = buildCoordinatesMap(hubVillages, overrides);
     const newHubBranches = buildHubBranches(hub, hubVillages, hubCoords, coordinates);
     const otherBranches = existingBranches.filter(b => b.hubKato !== hub.kato);
+    const merged = [...otherBranches, ...newHubBranches];
 
-    return [...otherBranches, ...newHubBranches];
+    const { branches, logisticians: updatedLogisticians } = applyLogisticianAssignments(
+        merged,
+        logisticians,
+        { onlyHubKato: hub.kato }
+    );
+
+    return { branches, logisticians: updatedLogisticians };
 }
 
 const useAppStore = create((set) => ({
@@ -508,15 +515,11 @@ const useAppStore = create((set) => ({
             const hub = state.hubs.find(h => h.kato === hubKato);
             if (!hub) return state;
 
-            const branches = rebuildBranchesForHub(
+            const { branches: assignedBranches, logisticians } = rebuildBranchesForHub(
                 hub,
                 state.villages,
                 state.villageCoordinateOverrides,
-                state.branches
-            );
-
-            const { branches: assignedBranches, logisticians } = applyLogisticianAssignments(
-                branches,
+                state.branches,
                 state.logisticians
             );
 
@@ -542,23 +545,22 @@ const useAppStore = create((set) => ({
     rebuildAllHubBranches: () =>
         set((state) => {
             let branches = state.branches;
+            let logisticians = state.logisticians;
 
             state.hubs.forEach(hub => {
-                branches = rebuildBranchesForHub(
+                const rebuilt = rebuildBranchesForHub(
                     hub,
                     state.villages,
                     state.villageCoordinateOverrides,
-                    branches
+                    branches,
+                    logisticians
                 );
+                branches = rebuilt.branches;
+                logisticians = rebuilt.logisticians;
             });
 
-            const { branches: assignedBranches, logisticians } = applyLogisticianAssignments(
-                branches,
-                state.logisticians
-            );
-
             return {
-                branches: assignedBranches,
+                branches,
                 logisticians,
                 selectedBranch: null,
                 branchRouteData: null,
@@ -571,7 +573,9 @@ const useAppStore = create((set) => ({
             const branch = state.branches.find(b => b.id === branchId);
             if (!branch) return state;
 
-            const oldLogisticianId = branch.logisticianId;
+            const oldLogisticianId = normalizeLogisticianId(branch.logisticianId);
+            const nextLogisticianId = normalizeLogisticianId(newLogisticianId);
+            if (!nextLogisticianId) return state;
 
             let logisticians = state.logisticians.map(l => {
                 if (l.id === oldLogisticianId) {
@@ -585,7 +589,7 @@ const useAppStore = create((set) => ({
             });
 
             logisticians = logisticians.map(l => {
-                if (l.id === newLogisticianId) {
+                if (l.id === nextLogisticianId) {
                     return {
                         ...l,
                         branchIds: [...(l.branchIds ?? []), branchId],
@@ -596,7 +600,7 @@ const useAppStore = create((set) => ({
             });
 
             const branches = state.branches.map(b =>
-                b.id === branchId ? { ...b, logisticianId: newLogisticianId } : b
+                b.id === branchId ? { ...b, logisticianId: nextLogisticianId } : b
             );
 
             return { logisticians, branches };

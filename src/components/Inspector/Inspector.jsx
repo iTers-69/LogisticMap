@@ -151,7 +151,7 @@ function Inspector() {
                 <p>
                     <strong>Логист: </strong>
                     <select
-                        value={selectedBranch.logisticianId || ""}
+                        value={selectedBranch.logisticianId != null ? String(selectedBranch.logisticianId) : ""}
                         onChange={(e) => {
                             const newId = Number(e.target.value);
                             if (newId) assignBranchToLogistician(selectedBranch.id, newId);
