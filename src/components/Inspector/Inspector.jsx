@@ -175,6 +175,9 @@ function Inspector() {
                 <hr />
 
                 <h4>Остановки маршрута</h4>
+                <p style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>
+                    Нажмите на село — карта перейдёт к точке, строка подсветится синим.
+                </p>
 
                 {selectedBranch && (
                     <div style={{

@@ -2,6 +2,7 @@ import { useEffect, useRef, useMemo } from "react";
 import { CircleMarker, Popup, useMap } from "react-leaflet";
 import useAppStore from "../../../store/appStore";
 import { resolveVillageCoord } from "../../../services/coordinatesService";
+import { findVillageById, isSameVillageId } from "../../../utils/villageId";
 
 const COLOR_CURRENT = "#4caf50";
 const COLOR_OTHER_BRANCH = "#2e7d32";
@@ -135,7 +136,7 @@ function VillageLayer() {
             {hubVillages.map(village => {
                 if (selectedVillage?.kato === village.kato && !coordinateEditMode) return null;
                 if (
-                    selectedRouteStopId === village.id
+                    isSameVillageId(selectedRouteStopId, village.id)
                     && selectedBranch
                     && !coordinateEditMode
                 ) return null;
@@ -265,10 +266,12 @@ function VillageLayer() {
             })}
 
             {selectedRouteStopId && selectedBranch && !coordinateEditMode && (() => {
-                const stopVillage = villages.find(v => v.id === selectedRouteStopId);
+                const stopVillage = findVillageById(villages, selectedRouteStopId);
                 if (!stopVillage) return null;
-                const orderIndex = branchVillageIds.indexOf(selectedRouteStopId) + 1;
-                const isEnd = selectedRouteStopId === lastVillageId;
+                const orderIndex = branchVillageIds.findIndex(id =>
+                    isSameVillageId(id, stopVillage.id)
+                ) + 1;
+                const isEnd = isSameVillageId(selectedRouteStopId, lastVillageId);
                 return (
                     <RouteStopMarker
                         village={stopVillage}

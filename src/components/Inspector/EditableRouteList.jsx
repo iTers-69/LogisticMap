@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import useAppStore from "../../store/appStore";
 import { resolveVillageCoord } from "../../services/coordinatesService";
+import { findVillageById, isSameVillageId } from "../../utils/villageId";
 
 function EditableRouteList({ branchId, villageIds, hubKato, canEdit = true }) {
     const {
@@ -18,7 +19,7 @@ function EditableRouteList({ branchId, villageIds, hubKato, canEdit = true }) {
     const [addSearch, setAddSearch] = useState("");
 
     const orderedVillages = (villageIds ?? [])
-        .map(id => villages.find(v => v.id === id))
+        .map(id => findVillageById(villages, id))
         .filter(Boolean);
 
     const lastId = villageIds?.[villageIds.length - 1];
@@ -103,8 +104,8 @@ function EditableRouteList({ branchId, villageIds, hubKato, canEdit = true }) {
                 )}
 
                 {orderedVillages.map((village, index) => {
-                    const isEnd = village.id === lastId;
-                    const isSelected = selectedRouteStopId === village.id;
+                    const isEnd = isSameVillageId(village.id, lastId);
+                    const isSelected = isSameVillageId(selectedRouteStopId, village.id);
                     const isDragging = dragIndex === index;
                     const isOver = overIndex === index && dragIndex !== null && dragIndex !== index;
 

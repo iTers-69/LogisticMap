@@ -4,6 +4,7 @@ import { useMap } from "react-leaflet";
 import useAppStore from "../../store/appStore";
 import hubCoordinates from "../../data/hubCoordinates";
 import { resolveVillageCoord } from "../../services/coordinatesService";
+import { findVillageById } from "../../utils/villageId";
 
 function MapController() {
 
@@ -19,7 +20,7 @@ function MapController() {
 
     useEffect(() => {
 
-        if (!selectedHub) return;
+        if (!selectedHub || selectedRouteStopId) return;
 
         const coords = hubCoordinates[selectedHub.kato];
 
@@ -34,12 +35,12 @@ function MapController() {
             }
         );
 
-    }, [selectedHub, map]);
+    }, [selectedHub, selectedRouteStopId, map]);
 
     useEffect(() => {
         if (!selectedRouteStopId || !selectedBranch) return;
 
-        const village = villages.find(v => v.id === selectedRouteStopId);
+        const village = findVillageById(villages, selectedRouteStopId);
         if (!village) return;
 
         const coords = resolveVillageCoord(village.kato, villageCoordinateOverrides);
