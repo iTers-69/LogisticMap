@@ -9,6 +9,11 @@ import {
     saveCloudData
 } from "./cloudService";
 
+function migrationApplied(migrated) {
+    return migrated.hubAssignmentsFixed > 0
+        || migrated.logisticianAssignmentsFixed > 0;
+}
+
 export async function resolveInitialData() {
     const defaultMigrated = migrateAppData(defaultAppData);
     const localRaw = loadLocalData();
@@ -16,9 +21,9 @@ export async function resolveInitialData() {
 
     if (!isCloudEnabled()) {
         if (localMigrated && !isAppDataEmpty(localMigrated.data)) {
-            return { source: "local", data: localMigrated.data, migrated: localMigrated.hubAssignmentsFixed > 0 };
+            return { source: "local", data: localMigrated.data, migrated: migrationApplied(localMigrated) };
         }
-        return { source: "default", data: defaultMigrated.data, migrated: defaultMigrated.hubAssignmentsFixed > 0 };
+        return { source: "default", data: defaultMigrated.data, migrated: migrationApplied(defaultMigrated) };
     }
 
     try {
@@ -28,7 +33,7 @@ export async function resolveInitialData() {
             const { updatedAt, ...raw } = cloudData;
             const migrated = migrateAppData(raw);
 
-            if (migrated.hubAssignmentsFixed > 0) {
+            if (migrationApplied(migrated)) {
                 await persistAppData(migrated.data);
             } else {
                 saveLocalData(migrated.data);
@@ -38,7 +43,7 @@ export async function resolveInitialData() {
                 source: "cloud",
                 data: migrated.data,
                 updatedAt,
-                migrated: migrated.hubAssignmentsFixed > 0
+                migrated: migrationApplied(migrated)
             };
         }
 
@@ -52,7 +57,7 @@ export async function resolveInitialData() {
         return {
             source: localMigrated && !isAppDataEmpty(localMigrated.data) ? "local-seeded" : "default-seeded",
             data: seedMigrated.data,
-            migrated: seedMigrated.hubAssignmentsFixed > 0
+            migrated: migrationApplied(seedMigrated)
         };
     } catch (error) {
         console.error("Ошибка загрузки из облака:", error);
@@ -62,7 +67,7 @@ export async function resolveInitialData() {
                 source: "local-fallback",
                 data: localMigrated.data,
                 error,
-                migrated: localMigrated.hubAssignmentsFixed > 0
+                migrated: migrationApplied(localMigrated)
             };
         }
 
@@ -70,7 +75,7 @@ export async function resolveInitialData() {
             source: "default-fallback",
             data: defaultMigrated.data,
             error,
-            migrated: defaultMigrated.hubAssignmentsFixed > 0
+            migrated: migrationApplied(defaultMigrated)
         };
     }
 }

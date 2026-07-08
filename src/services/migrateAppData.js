@@ -3,6 +3,7 @@ import {
     applyHubAssignments,
     cleanupBranchesAfterHubChanges
 } from "./hubAssignmentService.js";
+import { applyLogisticianAssignments } from "./logisticianAssignmentService.js";
 
 function markManualBranches(branches) {
     return branches.map(branch => ({
@@ -21,17 +22,28 @@ export function migrateAppData(data) {
         normalized.hubs
     );
 
-    const branches = fixedCount > 0
+    const branchesAfterHub = fixedCount > 0
         ? cleanupBranchesAfterHubChanges(normalized.branches, villages)
         : normalized.branches;
+
+    const {
+        branches,
+        logisticians,
+        fixedCount: logisticianFixedCount
+    } = applyLogisticianAssignments(
+        branchesAfterHub,
+        normalized.logisticians
+    );
 
     return {
         data: {
             ...normalized,
             villages,
-            branches: markManualBranches(branches)
+            branches: markManualBranches(branches),
+            logisticians
         },
-        hubAssignmentsFixed: fixedCount
+        hubAssignmentsFixed: fixedCount,
+        logisticianAssignmentsFixed: logisticianFixedCount
     };
 }
 
