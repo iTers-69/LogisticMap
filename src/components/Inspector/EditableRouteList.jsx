@@ -94,11 +94,7 @@ function EditableRouteList({ branchId, villageIds, hubKato, canEdit = true }) {
 
     return (
         <div>
-            <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>
-                🚪 Выезд → промежуточные → 🏁 Точка Б (последняя)
-            </div>
-
-            <div style={{ maxHeight: 360, overflowY: "auto" }}>
+            <div className="route-stop-list">
                 {orderedVillages.length === 0 && (
                     <p style={{ color: "#999", fontSize: 13 }}>Список пуст — добавьте сёла</p>
                 )}
@@ -109,85 +105,64 @@ function EditableRouteList({ branchId, villageIds, hubKato, canEdit = true }) {
                     const isDragging = dragIndex === index;
                     const isOver = overIndex === index && dragIndex !== null && dragIndex !== index;
 
-                    const rowStyle = isDragging
-                        ? { border: "1px solid #ddd", background: "#fff3e0" }
-                        : isSelected
-                        ? {
-                            border: "2px solid #1976d2",
-                            background: "#eef5ff"
-                        }
-                        : isEnd
-                            ? { border: "2px solid #f44336", background: "#fff5f5" }
-                            : isOver
-                                ? { border: "2px dashed #1976d2", background: "#e3f2fd" }
-                                : { border: "1px solid #ddd", background: "#fff" };
+                    const rowClass = [
+                        "route-stop",
+                        isDragging ? "route-stop--dragging" : "",
+                        isOver ? "route-stop--over" : "",
+                        isSelected ? "route-stop--selected" : "",
+                        isEnd && !isSelected && !isOver && !isDragging ? "route-stop--end" : "",
+                        !isSelected && !isEnd && !isOver && !isDragging ? "route-stop--default" : ""
+                    ].filter(Boolean).join(" ");
 
                     return (
                         <div
                             key={village.id}
+                            className={rowClass}
                             draggable={canEdit}
                             onDragStart={canEdit ? () => handleDragStart(index) : undefined}
                             onDragOver={canEdit ? (e) => handleDragOver(e, index) : undefined}
                             onDrop={canEdit ? () => handleDrop(index) : undefined}
                             onDragEnd={canEdit ? handleDragEnd : undefined}
                             onClick={() => selectRouteStop(village.id)}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
-                                padding: "8px 6px",
-                                marginBottom: 4,
-                                borderRadius: 6,
-                                cursor: "pointer",
-                                opacity: isDragging ? 0.5 : 1,
-                                ...rowStyle
-                            }}
                         >
                             {canEdit && (
                                 <span
-                                    style={{ color: "#999", fontSize: 12, width: 16, cursor: "grab" }}
+                                    className="route-stop__drag"
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     ⠿
                                 </span>
                             )}
-                            <span style={{
-                                minWidth: 20,
-                                fontWeight: "bold",
-                                fontSize: 12,
-                                color: isSelected ? "#1565c0" : "#1976d2"
-                            }}>
+                            <span className={`route-stop__num${isSelected ? " route-stop__num--selected" : ""}`}>
                                 {index + 1}
                             </span>
-                            <span style={{
-                                flex: 1,
-                                fontSize: 13,
-                                fontWeight: isSelected ? "bold" : "normal",
-                                color: isSelected ? "#1565c0" : "inherit"
-                            }}>
+                            <span className={`route-stop__name${isSelected ? " route-stop__name--selected" : ""}`}>
                                 {village.name}
                                 {isEnd && " 🏁"}
                             </span>
                             {canEdit && (
-                                <>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); moveItem(index, -1); }}
-                                disabled={index === 0}
-                                title="Вверх"
-                                style={btnSmall}
-                            >↑</button>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); moveItem(index, 1); }}
-                                disabled={index === villageIds.length - 1}
-                                title="Вниз"
-                                style={btnSmall}
-                            >↓</button>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); removeItem(index); }}
-                                title="Удалить"
-                                style={{ ...btnSmall, color: "#f44336" }}
-                            >✕</button>
-                                </>
+                                <div className="route-stop__actions">
+                                    <button
+                                        type="button"
+                                        className="route-stop__btn"
+                                        onClick={(e) => { e.stopPropagation(); moveItem(index, -1); }}
+                                        disabled={index === 0}
+                                        title="Вверх"
+                                    >↑</button>
+                                    <button
+                                        type="button"
+                                        className="route-stop__btn"
+                                        onClick={(e) => { e.stopPropagation(); moveItem(index, 1); }}
+                                        disabled={index === villageIds.length - 1}
+                                        title="Вниз"
+                                    >↓</button>
+                                    <button
+                                        type="button"
+                                        className="route-stop__btn route-stop__btn--delete"
+                                        onClick={(e) => { e.stopPropagation(); removeItem(index); }}
+                                        title="Удалить"
+                                    >✕</button>
+                                </div>
                             )}
                         </div>
                     );
@@ -266,15 +241,5 @@ function EditableRouteList({ branchId, villageIds, hubKato, canEdit = true }) {
         </div>
     );
 }
-
-const btnSmall = {
-    padding: "2px 6px",
-    border: "1px solid #ddd",
-    borderRadius: 4,
-    background: "#f5f5f5",
-    cursor: "pointer",
-    fontSize: 12,
-    lineHeight: 1.4
-};
 
 export default EditableRouteList;

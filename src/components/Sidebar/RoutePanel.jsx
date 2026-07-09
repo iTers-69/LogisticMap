@@ -203,77 +203,35 @@ function RoutePanel() {
     };
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-            <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+        <div className="route-panel">
+            <div className="route-panel__mode">
                 <button
+                    type="button"
                     onClick={() => setMode("standard")}
-                    style={{
-                        flex: 1,
-                        padding: "8px 12px",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        background: mode === "standard" ? "#fc912d" : "#ddd",
-                        color: "black",
-                        fontWeight: "bold"
-                    }}
+                    className={mode === "standard" ? "route-panel__mode-btn route-panel__mode-btn--active" : "route-panel__mode-btn"}
                 >
                     📋 Маршруты
                 </button>
                 <button
+                    type="button"
                     onClick={() => setMode("custom")}
-                    style={{
-                        flex: 1,
-                        padding: "8px 12px",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        background: mode === "custom" ? "#fc912d" : "#ddd",
-                        color: "black",
-                        fontWeight: "bold"
-                    }}
+                    className={mode === "custom" ? "route-panel__mode-btn route-panel__mode-btn--active" : "route-panel__mode-btn"}
                 >
                     🗺️ Свой маршрут
                 </button>
             </div>
 
             {mode === "standard" ? (
-                <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-                    <div style={{ flex: 1, overflowY: "auto", marginBottom: 8 }}>
-                        <h3 style={{ color: "#333", marginBottom: 8 }}>Маршруты</h3>
-                        {(branches ?? []).length === 0 && (
-                            <p style={{ color: "#333" }}>Сначала импортируйте Excel.</p>
-                        )}
-                        {selectedBranch && (
-                            <div style={{
-                                padding: 10,
-                                background: "#e3f2fd",
-                                borderRadius: 8,
-                                border: "1px solid #2196f3",
-                                fontSize: 13,
-                                color: "#333"
-                            }}>
-                                <strong>Выбрано:</strong>{" "}
-                                <BranchNameEditor
-                                    branchId={selectedBranch.id}
-                                    name={selectedBranch.name}
-                                    onSave={updateBranchName}
-                                />
-                                <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
-                                    Редактируйте список сёл справа →
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                <div className="route-panel__body">
+                    {(branches ?? []).length === 0 && (
+                        <p className="route-panel__empty">Сначала импортируйте Excel.</p>
+                    )}
 
                     {(hubs ?? []).length > 0 && (
-                        <div style={{
-                            borderTop: "2px solid #fc912d",
-                            paddingTop: 12,
-                            flexShrink: 0
-                        }}>
-                            <h4 style={{ color: "#333", marginBottom: 8 }}>📍 Хабы</h4>
-                            <div style={{ maxHeight: "120px", overflowY: "auto", marginBottom: 12 }}>
+                        <div className="route-panel__sections">
+                            <section className="route-panel__hubs-section">
+                                <h4 className="route-panel__heading">📍 Хабы</h4>
+                                <div className="route-panel__hubs-list">
                                 {(hubs ?? []).map(hub => {
                                     const count = (branches ?? []).filter(b => b.hubKato === hub.kato).length;
                                     const isActive = selectedHub?.kato === hub.kato;
@@ -299,12 +257,13 @@ function RoutePanel() {
                                         </div>
                                     );
                                 })}
-                            </div>
+                                </div>
+                            </section>
 
                             {selectedHub && (
                                 <>
                                     {canEdit && (
-                                        <div style={{ marginBottom: 10 }}>
+                                        <div className="route-panel__rebuild">
                                             <button
                                                 type="button"
                                                 onClick={handleRebuildHub}
@@ -341,13 +300,9 @@ function RoutePanel() {
                                             </button>
                                         </div>
                                     )}
-                                    <div style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        marginBottom: 8
-                                    }}>
-                                        <h4 style={{ color: "#333", margin: 0 }}>
+                                    <section className="route-panel__branches-section">
+                                    <div className="route-panel__branches-header">
+                                        <h4 className="route-panel__heading">
                                             🚚 Ветки — {selectedHub.name}
                                         </h4>
                                         <button
@@ -367,11 +322,11 @@ function RoutePanel() {
                                         </button>
                                     </div>
                                     {hubBranches.length === 0 ? (
-                                        <p style={{ fontSize: 13, color: "#666" }}>
+                                        <p className="route-panel__empty route-panel__empty--inline">
                                             Нет веток — нажмите «+ Ветка»
                                         </p>
                                     ) : (
-                                        <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+                                        <div className="route-panel__branches-list">
                                             {hubBranches.map(branch => (
                                                 <div
                                                     key={branch.id}
@@ -465,6 +420,7 @@ function RoutePanel() {
                                             ))}
                                         </div>
                                     )}
+                                    </section>
                                 </>
                             )}
                         </div>

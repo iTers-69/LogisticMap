@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import useAppStore from "../../store/appStore";
 import { getHubAssignmentIssues, getRegionFromFullName } from "../../services/hubAssignmentService";
-import { getCoordinateIssueMap, getCoordinateIssues } from "../../services/coordinateValidationService";
+import { getCoordinateIssueMap } from "../../services/coordinateValidationService";
 import { baseCoordinates } from "../../services/coordinatesService";
-import { geocodeVillagesBatch, geocodeVillage } from "../../services/geocodeService";
+import { geocodeVillage } from "../../services/geocodeService";
 import { persistAppData } from "../../services/dataSyncService";
 
 function VillagePanel() {
@@ -22,7 +22,6 @@ function VillagePanel() {
     const [search, setSearch] = useState("");
     const [fillFilter, setFillFilter] = useState("all");
     const [hubFilter, setHubFilter] = useState("all");
-    const [showCoordIssuesOnly, setShowCoordIssuesOnly] = useState(false);
     const [fixStatus, setFixStatus] = useState("");
     const [geocodeProgress, setGeocodeProgress] = useState(null);
     const selectedRef = useRef(null);
@@ -30,11 +29,6 @@ function VillagePanel() {
     const hubIssues = useMemo(
         () => getHubAssignmentIssues(villages ?? [], hubs ?? []),
         [villages, hubs]
-    );
-
-    const coordinateIssues = useMemo(
-        () => getCoordinateIssues(villages ?? [], villageCoordinateOverrides ?? {}, baseCoordinates),
-        [villages, villageCoordinateOverrides]
     );
 
     const coordinateIssueMap = useMemo(
@@ -70,8 +64,6 @@ function VillagePanel() {
 
         if (hubFilter !== "all" && village.hubKato !== hubFilter) return false;
 
-        if (showCoordIssuesOnly && !coordinateIssueMap.has(String(village.kato))) return false;
-
         const isActive = activeVillageIds.has(village.id);
         if (fillFilter === "active") return isActive;
         if (fillFilter === "inactive") return !isActive;
@@ -105,70 +97,6 @@ function VillagePanel() {
         });
 
         setFixStatus(`Исправлено ${hubIssues.length} сёл — сохранено в облако`);
-    };
-
-    const handleRegeocodeBad = async () => {
-        if (!canEdit) return;
-        const criticalCount = coordinateIssues.filter(i => i.severity === "critical").length;
-        const targetIssues = coordinateIssues.filter(i =>
-            i.type === "missing"
-            || i.type === "outside_kz"
-            || i.severity === "critical"
-            || (i.type === "far_from_region" && i.severity === "warning")
-        );
-
-        if (targetIssues.length === 0) {
-            setFixStatus("Подозрительных координат не найдено");
-            return;
-        }
-
-        const confirmed = window.confirm(
-            `Перегеокодировать ${targetIssues.length} сёл через OpenStreetMap?\n\n`
-            + `Критичных: ${criticalCount}. Процесс займёт несколько минут `
-            + "(~1 сек на село). Новые координаты сохранятся как исправления."
-        );
-
-        if (!confirmed) return;
-
-        const targetVillages = targetIssues
-            .map(issue => (villages ?? []).find(v => String(v.kato) === String(issue.kato)))
-            .filter(Boolean);
-
-        setGeocodeProgress({ current: 0, total: targetVillages.length, name: "" });
-        setFixStatus("");
-
-        const results = await geocodeVillagesBatch(
-            targetVillages,
-            ({ current, total, village, result }) => {
-                setGeocodeProgress({
-                    current,
-                    total,
-                    name: village.name,
-                    ok: result?.ok
-                });
-
-                if (result?.ok) {
-                    setVillageCoordinate(village.kato, result.lat, result.lng);
-                }
-            },
-            { delayBetweenMs: 1200, maxDistanceKm: 400 }
-        );
-
-        const successCount = results.filter(r => r.result.ok).length;
-
-        const state = useAppStore.getState();
-        await persistAppData({
-            hubs: state.hubs,
-            villages: state.villages,
-            branches: state.branches,
-            logisticians: state.logisticians,
-            villageCoordinateOverrides: state.villageCoordinateOverrides
-        });
-
-        setGeocodeProgress(null);
-        setFixStatus(
-            `Перегеокодировано ${successCount} из ${targetVillages.length} — сохранено в облако`
-        );
     };
 
     const handleRegeocodeOne = async (village) => {
@@ -266,70 +194,6 @@ function VillagePanel() {
                     </div>
                 )}
             </div>
-
-            {canEdit && coordinateIssues.length > 0 && (
-                <div style={{
-                    marginBottom: 10,
-                    padding: "10px 12px",
-                    background: "#ffebee",
-                    borderRadius: 8,
-                    border: "1px solid #ef9a9a",
-                    fontSize: 12,
-                    color: "#333"
-                }}>
-                    <div style={{ fontWeight: "bold", marginBottom: 6 }}>
-                        📍 Неверные координаты: {coordinateIssues.length}
-                    </div>
-                    <div style={{ color: "#666", marginBottom: 8, lineHeight: 1.4 }}>
-                        Сёла стоят не на своём месте (далеко от области, дубликаты).
-                        Критичных: {coordinateIssues.filter(i => i.severity === "critical").length}.
-                    </div>
-                    <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-                        <button
-                            type="button"
-                            onClick={() => setShowCoordIssuesOnly(v => !v)}
-                            style={{
-                                flex: 1,
-                                padding: "8px 10px",
-                                border: "1px solid #ef5350",
-                                borderRadius: 6,
-                                background: showCoordIssuesOnly ? "#ef5350" : "white",
-                                color: showCoordIssuesOnly ? "white" : "#c62828",
-                                fontWeight: "bold",
-                                cursor: "pointer",
-                                fontSize: 12
-                            }}
-                        >
-                            {showCoordIssuesOnly ? "Показать все" : "Только проблемные"}
-                        </button>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={handleRegeocodeBad}
-                        disabled={Boolean(geocodeProgress)}
-                        style={{
-                            width: "100%",
-                            padding: "8px 10px",
-                            border: "none",
-                            borderRadius: 6,
-                            background: geocodeProgress ? "#bdbdbd" : "#e53935",
-                            color: "white",
-                            fontWeight: "bold",
-                            cursor: geocodeProgress ? "wait" : "pointer",
-                            fontSize: 12
-                        }}
-                    >
-                        {geocodeProgress
-                            ? `Геокодинг ${geocodeProgress.current}/${geocodeProgress.total}: ${geocodeProgress.name}`
-                            : "Исправить координаты (OSM)"}
-                    </button>
-                    {fixStatus && (
-                        <p style={{ marginTop: 8, marginBottom: 0, color: "#2e7d32" }}>
-                            {fixStatus}
-                        </p>
-                    )}
-                </div>
-            )}
 
             {canEdit && hubIssues.length > 0 && (
                 <div style={{

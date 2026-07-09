@@ -3,14 +3,21 @@ import useAppStore from "../../store/appStore";
 import hubCoordinates from "../../data/hubCoordinates";
 import { resolveVillageCoord, isCoordOverridden, hasBaseVillageCoord } from "../../services/coordinatesService";
 import { enrichBranch } from "../../utils/branchUtils";
+import { findVillageById } from "../../utils/villageId";
 import EditableRouteList from "./EditableRouteList";
 import BranchNameEditor from "../Sidebar/BranchNameEditor";
+import { getLogisticianStats } from "../../utils/logisticianStats";
+
+function EmptyInspector() {
+    return <aside className="inspector inspector--empty" />;
+}
 
 function Inspector() {
     const {
         selectedBranch,
         selectedVillage,
         selectedHub,
+        selectedLogistician,
         activeTab,
         villages,
         branches,
@@ -52,25 +59,33 @@ function Inspector() {
             }))
             : selectedBranch;
 
-        const endVillage = villages.find(v => v.kato === branchInfo.endPointKato);
+        const lastRouteVillageId = selectedBranch.villageIds?.[selectedBranch.villageIds.length - 1];
+        const endVillage = findVillageById(villages, branchInfo.endPointKato)
+            ?? findVillageById(villages, lastRouteVillageId);
 
         return (
             <aside className="inspector">
-                <h2>Маршрут</h2>
-                <BranchNameEditor
-                    branchId={selectedBranch.id}
-                    name={branchInfo.name}
-                    onSave={updateBranchName}
-                />
-                <p><strong>Хаб:</strong> {hub?.name}</p>
+                <h2 className="inspector__title">Маршрут</h2>
+                <div className="route-branch-name">
+                    <BranchNameEditor
+                        branchId={selectedBranch.id}
+                        name={branchInfo.name}
+                        onSave={updateBranchName}
+                    />
+                </div>
 
-                {branchInfo.exitIndex && (
-                    <p><strong>🚪 Выезд (А):</strong> #{branchInfo.exitIndex} ({branchInfo.exitBearing}°)</p>
-                )}
-
-                {endVillage && (
-                    <p><strong>🏁 Точка Б:</strong> {endVillage.name}</p>
-                )}
+                <div className="route-endpoints">
+                    <div className="route-endpoints__row">
+                        <span className="route-endpoints__label">Точка А</span>
+                        <span className="route-endpoints__value">{hub?.name ?? "—"}</span>
+                    </div>
+                    {endVillage && (
+                        <div className="route-endpoints__row route-endpoints__row--b">
+                            <span className="route-endpoints__label">Точка Б</span>
+                            <span className="route-endpoints__value">{endVillage.name}</span>
+                        </div>
+                    )}
+                </div>
 
                 {routeLoading && (
                     <p style={{ color: "#1976d2", fontWeight: "bold", fontSize: 13 }}>
@@ -79,51 +94,38 @@ function Inspector() {
                 )}
 
                 {branchRouteData && (
-                    <div style={{
-                        background: "#fff",
-                        border: "1px solid #ddd",
-                        borderRadius: 8,
-                        padding: 10,
-                        marginBottom: 12,
-                        fontSize: 13
-                    }}>
-                        <div><strong>Расстояние:</strong> {(branchRouteData.distance / 1000).toFixed(1)} км</div>
-                        <div><strong>Время:</strong> {formatDuration(branchRouteData.duration)}</div>
+                    <div className="route-stats">
+                        <div className="route-stats__row">
+                            <span>Расстояние</span>
+                            <strong>{(branchRouteData.distance / 1000).toFixed(1)} км</strong>
+                        </div>
+                        <div className="route-stats__row">
+                            <span>Время</span>
+                            <strong>{formatDuration(branchRouteData.duration)}</strong>
+                        </div>
 
-                        <div style={{ marginTop: 10, display: "flex", gap: 6 }}>
+                        <div className="route-stats__actions">
                             <button
+                                type="button"
+                                className="route-stats__play"
                                 onClick={() => playRouteAnimation()}
                                 disabled={routeAnimation.playing}
-                                style={{
-                                    flex: 1,
-                                    padding: "8px 12px",
-                                    borderRadius: 6,
-                                    border: "none",
-                                    background: routeAnimation.playing ? "#ccc" : "#4caf50",
-                                    color: "white",
-                                    fontWeight: "bold",
-                                    cursor: routeAnimation.playing ? "default" : "pointer"
-                                }}
                             >
                                 {routeAnimation.playing ? "▶ Едет..." : "▶ Запустить машину"}
                             </button>
                             <button
+                                type="button"
+                                className="route-stats__reset"
                                 onClick={() => resetRouteAnimation()}
-                                style={{
-                                    padding: "8px 12px",
-                                    borderRadius: 6,
-                                    border: "none",
-                                    background: "#e0e0e0",
-                                    cursor: "pointer",
-                                    fontWeight: "bold"
-                                }}
+                                title="Сбросить анимацию"
+                                aria-label="Сбросить анимацию"
                             >
                                 ↺
                             </button>
                         </div>
 
-                        <div style={{ marginTop: 8 }}>
-                            <label style={{ fontSize: 12, color: "#666" }}>
+                        <div className="route-stats__speed">
+                            <label>
                                 Скорость: {routeAnimation.speed}x
                             </label>
                             <input
@@ -133,36 +135,29 @@ function Inspector() {
                                 step="0.5"
                                 value={routeAnimation.speed}
                                 onChange={(e) => setRouteAnimation({ speed: Number(e.target.value) })}
-                                style={{ width: "100%" }}
                             />
                         </div>
 
-                        <div style={{ marginTop: 6, height: 4, background: "#eee", borderRadius: 2 }}>
-                            <div style={{
-                                height: "100%",
-                                width: `${routeAnimation.progress * 100}%`,
-                                background: branchInfo.color ?? "#e53935",
-                                borderRadius: 2
-                            }} />
+                        <div className="route-stats__progress">
+                            <div
+                                className="route-stats__progress-fill"
+                                style={{
+                                    width: `${routeAnimation.progress * 100}%`,
+                                    background: branchInfo.color ?? "#e53935"
+                                }}
+                            />
                         </div>
                     </div>
                 )}
 
-                <p>
-                    <strong>Логист: </strong>
+                <div className="route-logistician">
+                    <label htmlFor="route-logistician-select">Логист</label>
                     <select
+                        id="route-logistician-select"
                         value={selectedBranch.logisticianId != null ? String(selectedBranch.logisticianId) : ""}
                         onChange={(e) => {
                             const newId = Number(e.target.value);
                             if (newId) assignBranchToLogistician(selectedBranch.id, newId);
-                        }}
-                        style={{
-                            padding: "4px 8px",
-                            borderRadius: 4,
-                            border: "1px solid #ccc",
-                            fontSize: 14,
-                            background: "white",
-                            cursor: "pointer"
                         }}
                     >
                         <option value="">— не назначен —</option>
@@ -170,76 +165,9 @@ function Inspector() {
                             <option key={l.id} value={l.id}>{l.name}</option>
                         ))}
                     </select>
-                </p>
+                </div>
 
-                <hr />
-
-                <h4>Остановки маршрута</h4>
-                <p style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>
-                    Нажмите на село — карта перейдёт к точке, строка подсветится синим.
-                </p>
-
-                {selectedBranch && (
-                    <div style={{
-                        display: "flex",
-                        gap: 12,
-                        fontSize: 11,
-                        color: "#666",
-                        marginBottom: 8,
-                        padding: "6px 8px",
-                        background: "#f5f5f5",
-                        borderRadius: 6
-                    }}>
-                        <span>
-                            <span style={{
-                                display: "inline-block",
-                                width: 10,
-                                height: 10,
-                                borderRadius: "50%",
-                                background: "#4caf50",
-                                marginRight: 4,
-                                verticalAlign: "middle"
-                            }} />
-                            Эта ветка
-                        </span>
-                        <span>
-                            <span style={{
-                                display: "inline-block",
-                                width: 10,
-                                height: 10,
-                                borderRadius: "50%",
-                                background: "#2e7d32",
-                                marginRight: 4,
-                                verticalAlign: "middle"
-                            }} />
-                            Другая ветка
-                        </span>
-                        <span>
-                            <span style={{
-                                display: "inline-block",
-                                width: 10,
-                                height: 10,
-                                borderRadius: "50%",
-                                background: "#bdbdbd",
-                                marginRight: 4,
-                                verticalAlign: "middle"
-                            }} />
-                            Свободно
-                        </span>
-                        <span>
-                            <span style={{
-                                display: "inline-block",
-                                width: 10,
-                                height: 10,
-                                borderRadius: "50%",
-                                background: "#f44336",
-                                marginRight: 4,
-                                verticalAlign: "middle"
-                            }} />
-                            Точка Б
-                        </span>
-                    </div>
-                )}
+                <h4 className="inspector__subtitle">Остановки маршрута</h4>
 
                 <EditableRouteList
                     branchId={selectedBranch.id}
@@ -264,6 +192,19 @@ function Inspector() {
         );
     }
 
+    if (activeTab === "logistics") {
+        if (selectedLogistician) {
+            return (
+                <LogisticianInspector
+                    logistician={selectedLogistician}
+                    branches={branches}
+                />
+            );
+        }
+
+        return <EmptyInspector />;
+    }
+
     if (selectedVillage) {
         return (
             <VillageInspector
@@ -280,15 +221,39 @@ function Inspector() {
         );
     }
 
-    return (
-        <aside className="inspector">
-            <h2>Маршрут</h2>
-            <p>Выберите хаб и ветку слева</p>
-        </aside>
-    );
+    return <EmptyInspector />;
 }
 
 export default Inspector;
+
+function LogisticianInspector({ logistician, branches }) {
+    const stats = getLogisticianStats(logistician, branches);
+
+    return (
+        <aside className="inspector">
+            <h2 className="inspector__title">Логист</h2>
+
+            <div className="logistician-card">
+                <div className="logistician-card__name">{logistician.name}</div>
+
+                <div className="logistician-card__stats">
+                    <div className="logistician-card__stat">
+                        <span className="logistician-card__stat-value">{stats.hubsCount}</span>
+                        <span className="logistician-card__stat-label">Хабов</span>
+                    </div>
+                    <div className="logistician-card__stat">
+                        <span className="logistician-card__stat-value">{stats.branchesCount}</span>
+                        <span className="logistician-card__stat-label">Веток</span>
+                    </div>
+                    <div className="logistician-card__stat">
+                        <span className="logistician-card__stat-value">{stats.villagesCount}</span>
+                        <span className="logistician-card__stat-label">НП</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    );
+}
 
 function HubInspector({ hub, villages, branches, selectedVillage, overrides, onSelectVillage }) {
     const [search, setSearch] = useState("");
