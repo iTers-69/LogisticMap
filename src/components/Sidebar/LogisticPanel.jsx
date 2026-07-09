@@ -40,7 +40,7 @@ function LogisticPanel() {
 
         <div>
 
-            <h3>Логисты</h3>
+            <h3 className="sidebar-panel__title">Логисты</h3>
 
             <div
                 style={{

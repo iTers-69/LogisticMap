@@ -120,9 +120,17 @@ function RoutePanel() {
         }
     }, [customRouteStart, customRouteEnd]);
 
-    const hubBranches = selectedHub
-        ? (branches ?? []).filter(b => b.hubKato === selectedHub.kato)
-        : [];
+    const handleHubClick = (hub) => {
+        if (selectedHub?.kato === hub.kato) {
+            useAppStore.setState({
+                selectedHub: null,
+                selectedVillage: null,
+                selectedBranch: null
+            });
+            return;
+        }
+        selectHub(hub);
+    };
 
     const buildPointsList = () => [
         ...(hubs ?? []).map(h => ({
@@ -159,7 +167,7 @@ function RoutePanel() {
 
         const villageCount = (villages ?? []).filter(v => v.hubKato === selectedHub.kato).length;
         const confirmed = window.confirm(
-            `Перестроить выезды для «${selectedHub.name}»?\n\n`
+            `Перестроить ветки для «${selectedHub.name}»?\n\n`
             + `Будет ~${Math.min(10, Math.max(4, Math.ceil(villageCount / 12)))} веток по секторам компаса. `
             + "Порядок сёл в ветках пересчитается — ручные правки маршрутов будут потеряны."
         );
@@ -183,7 +191,7 @@ function RoutePanel() {
         if (!canEdit) return;
 
         const confirmed = window.confirm(
-            "Перестроить выезды для ВСЕХ хабов?\n\n"
+            "Перестроить ветки для ВСЕХ хабов?\n\n"
             + "Ветки всех городов будут пересчитаны по секторам. "
             + "Ручные правки маршрутов будут потеряны."
         );
@@ -232,197 +240,100 @@ function RoutePanel() {
                             <section className="route-panel__hubs-section">
                                 <h4 className="route-panel__heading">📍 Хабы</h4>
                                 <div className="route-panel__hubs-list">
-                                {(hubs ?? []).map(hub => {
-                                    const count = (branches ?? []).filter(b => b.hubKato === hub.kato).length;
-                                    const isActive = selectedHub?.kato === hub.kato;
-                                    return (
-                                        <div
-                                            key={hub.kato}
-                                            onClick={() => selectHub(hub)}
-                                            style={{
-                                                padding: "8px 10px",
-                                                marginBottom: 4,
-                                                borderRadius: 6,
-                                                cursor: "pointer",
-                                                background: isActive ? "#fff3e0" : "#fff",
-                                                border: isActive ? "2px solid #fc912d" : "1px solid #ddd",
-                                                color: "#333",
-                                                fontSize: 13
-                                            }}
-                                        >
-                                            <strong>{hub.name}</strong>
-                                            <span style={{ color: "#888", marginLeft: 6 }}>
-                                                ({count} веток)
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                                </div>
-                            </section>
+                                    {(hubs ?? []).map(hub => {
+                                        const isExpanded = selectedHub?.kato === hub.kato;
+                                        const hubBranchList = (branches ?? []).filter(b => b.hubKato === hub.kato);
 
-                            {selectedHub && (
-                                <>
-                                    {canEdit && (
-                                        <div className="route-panel__rebuild">
-                                            <button
-                                                type="button"
-                                                onClick={handleRebuildHub}
-                                                style={{
-                                                    width: "100%",
-                                                    padding: "8px 10px",
-                                                    marginBottom: 6,
-                                                    border: "none",
-                                                    borderRadius: 6,
-                                                    background: "#8B1538",
-                                                    color: "white",
-                                                    fontWeight: "bold",
-                                                    fontSize: 12,
-                                                    cursor: "pointer"
-                                                }}
+                                        return (
+                                            <div
+                                                key={hub.kato}
+                                                className={isExpanded ? "hub-item hub-item--route active" : "hub-item hub-item--route"}
                                             >
-                                                ⟳ Перестроить выезды (звезда)
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={handleRebuildAll}
-                                                style={{
-                                                    width: "100%",
-                                                    padding: "6px 10px",
-                                                    border: "1px solid #ccc",
-                                                    borderRadius: 6,
-                                                    background: "white",
-                                                    color: "#666",
-                                                    fontSize: 11,
-                                                    cursor: "pointer"
-                                                }}
-                                            >
-                                                Перестроить все хабы
-                                            </button>
-                                        </div>
-                                    )}
-                                    <section className="route-panel__branches-section">
-                                    <div className="route-panel__branches-header">
-                                        <h4 className="route-panel__heading">
-                                            🚚 Ветки — {selectedHub.name}
-                                        </h4>
-                                        <button
-                                            onClick={() => addBranch(selectedHub.kato)}
-                                            style={{
-                                                padding: "4px 10px",
-                                                borderRadius: 6,
-                                                border: "none",
-                                                background: "#4caf50",
-                                                color: "white",
-                                                fontWeight: "bold",
-                                                fontSize: 12,
-                                                cursor: "pointer"
-                                            }}
-                                        >
-                                            + Ветка
-                                        </button>
-                                    </div>
-                                    {hubBranches.length === 0 ? (
-                                        <p className="route-panel__empty route-panel__empty--inline">
-                                            Нет веток — нажмите «+ Ветка»
-                                        </p>
-                                    ) : (
-                                        <div className="route-panel__branches-list">
-                                            {hubBranches.map(branch => (
                                                 <div
-                                                    key={branch.id}
-                                                    onClick={() => selectBranch(branch)}
-                                                    style={{
-                                                        marginBottom: 8,
-                                                        padding: 8,
-                                                        borderRadius: 6,
-                                                        cursor: "pointer",
-                                                        background: selectedBranch?.id === branch.id
-                                                            ? "#e3f2fd" : "#fff",
-                                                        border: selectedBranch?.id === branch.id
-                                                            ? "2px solid #2196f3" : "1px solid #ddd",
-                                                        borderLeft: `4px solid ${branch.color ?? "#e53935"}`,
-                                                        color: "#333",
-                                                        fontSize: 13
-                                                    }}
+                                                    className="hub-item__header"
+                                                    onClick={() => handleHubClick(hub)}
                                                 >
-                                                    <div style={{
-                                                        display: "flex",
-                                                        justifyContent: "space-between",
-                                                        alignItems: "flex-start"
-                                                    }}>
-                                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                                            <BranchNameEditor
-                                                                branchId={branch.id}
-                                                                name={branch.name}
-                                                                onSave={updateBranchName}
-                                                                compact
-                                                            />
-                                                            {branch.exitBearing != null && (
-                                                                <span style={{ color: "#888", marginLeft: 6 }}>
-                                                                    {branch.exitBearing}°
-                                                                </span>
-                                                            )}
-                                                            <div style={{ fontSize: 12, color: "#666" }}>
-                                                                {branch.totalStops} сёл
-                                                                {branch.manualRoute && " · ✏️ изменён"}
-                                                            </div>
-                                                        </div>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                if (window.confirm(`Удалить ${branch.name}?`)) {
-                                                                    removeBranch(branch.id);
-                                                                }
-                                                            }}
-                                                            title="Удалить ветку"
-                                                            style={{
-                                                                padding: "2px 8px",
-                                                                border: "none",
-                                                                borderRadius: 4,
-                                                                background: "#ffebee",
-                                                                color: "#f44336",
-                                                                cursor: "pointer",
-                                                                fontSize: 14,
-                                                                lineHeight: 1.4
-                                                            }}
-                                                        >
-                                                            ✕
-                                                        </button>
-                                                    </div>
+                                                    <strong className="hub-item__name">{hub.name}</strong>
+                                                    <span className={`hub-item__chevron${isExpanded ? " hub-item__chevron--open" : ""}`}>
+                                                        ›
+                                                    </span>
+                                                </div>
+
+                                                {isExpanded && (
                                                     <div
-                                                        style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}
+                                                        className="hub-item__expand"
                                                         onClick={(e) => e.stopPropagation()}
                                                     >
-                                                        <span style={{ fontSize: 11, color: "#777" }}>Логист:</span>
-                                                        <select
-                                                            value={branch.logisticianId != null ? String(branch.logisticianId) : ""}
-                                                            onChange={(e) => {
-                                                                const newId = Number(e.target.value);
-                                                                if (newId) {
-                                                                    assignBranchToLogistician(branch.id, newId);
-                                                                }
-                                                            }}
-                                                            style={{
-                                                                padding: "1px 4px",
-                                                                borderRadius: 4,
-                                                                border: "1px solid #ccc",
-                                                                fontSize: 11,
-                                                                background: "white"
-                                                            }}
-                                                        >
-                                                            <option value="">—</option>
-                                                            {(logisticians ?? []).map(l => (
-                                                                <option key={l.id} value={l.id}>{l.name}</option>
-                                                            ))}
-                                                        </select>
+                                                        <div className="hub-item__branches-toolbar">
+                                                            <span className="hub-item__branches-label">
+                                                                🚚 Ветки · {hubBranchList.length}
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                className="hub-item__add-branch"
+                                                                onClick={() => addBranch(hub.kato)}
+                                                            >
+                                                                + Ветка
+                                                            </button>
+                                                        </div>
+
+                                                        {canEdit && (
+                                                            <div className="route-panel__rebuild route-panel__rebuild--inline">
+                                                                <button
+                                                                    type="button"
+                                                                    className="route-panel__rebuild-btn"
+                                                                    onClick={handleRebuildHub}
+                                                                >
+                                                                    ⟳ Перестроить ветки (звезда)
+                                                                </button>
+                                                            </div>
+                                                        )}
+
+                                                        {hubBranchList.length === 0 ? (
+                                                            <p className="route-panel__empty route-panel__empty--inline">
+                                                                Нет веток — нажмите «+ Ветка»
+                                                            </p>
+                                                        ) : (
+                                                            <div className="hub-item__branches">
+                                                                {hubBranchList.map(branch => (
+                                                                    <RouteBranchCard
+                                                                        key={branch.id}
+                                                                        branch={branch}
+                                                                        isSelected={selectedBranch?.id === branch.id}
+                                                                        logisticians={logisticians}
+                                                                        onSelect={() => selectBranch(branch)}
+                                                                        onRemove={() => {
+                                                                            if (window.confirm(`Удалить ${branch.name}?`)) {
+                                                                                removeBranch(branch.id);
+                                                                            }
+                                                                        }}
+                                                                        onAssignLogistician={(logisticianId) =>
+                                                                            assignBranchToLogistician(branch.id, logisticianId)
+                                                                        }
+                                                                        onSaveName={updateBranchName}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    </section>
-                                </>
-                            )}
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {canEdit && (
+                                    <div className="route-panel__rebuild route-panel__rebuild--footer">
+                                        <button
+                                            type="button"
+                                            className="route-panel__rebuild-all-btn"
+                                            onClick={handleRebuildAll}
+                                        >
+                                            Перестроить все хабы
+                                        </button>
+                                    </div>
+                                )}
+                            </section>
                         </div>
                     )}
                 </div>
@@ -482,6 +393,75 @@ function RoutePanel() {
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+function RouteBranchCard({
+    branch,
+    isSelected,
+    logisticians,
+    onSelect,
+    onRemove,
+    onAssignLogistician,
+    onSaveName
+}) {
+    return (
+        <div
+            className={isSelected ? "route-branch-card route-branch-card--selected" : "route-branch-card"}
+            onClick={onSelect}
+            style={{ borderLeftColor: branch.color ?? "#e53935" }}
+        >
+            <div className="route-branch-card__top">
+                <div className="route-branch-card__info">
+                    <BranchNameEditor
+                        branchId={branch.id}
+                        name={branch.name}
+                        onSave={onSaveName}
+                        compact
+                    />
+                    {branch.exitBearing != null && (
+                        <span className="route-branch-card__bearing">
+                            {branch.exitBearing}°
+                        </span>
+                    )}
+                    <div className="route-branch-card__meta">
+                        {branch.totalStops} сёл
+                        {branch.manualRoute && " · ✏️ изменён"}
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    className="route-branch-card__remove"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onRemove();
+                    }}
+                    title="Удалить ветку"
+                >
+                    ✕
+                </button>
+            </div>
+            <div
+                className="route-branch-card__logistician"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <span>Логист:</span>
+                <select
+                    value={branch.logisticianId != null ? String(branch.logisticianId) : ""}
+                    onChange={(e) => {
+                        const newId = Number(e.target.value);
+                        if (newId) {
+                            onAssignLogistician(newId);
+                        }
+                    }}
+                >
+                    <option value="">—</option>
+                    {(logisticians ?? []).map(l => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                    ))}
+                </select>
+            </div>
         </div>
     );
 }

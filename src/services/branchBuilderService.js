@@ -43,7 +43,7 @@ export function buildHubBranches(hub, hubVillages, hubCoords, coordinates, optio
         const branch = createBranch({
             id: `${hub.kato}-${index + 1}`,
             hubKato: hub.kato,
-            name: `Выезд ${index + 1}`
+            name: `Ветка ${index + 1}`
         });
 
         branch.villageIds = ordered.map(v => v.id);

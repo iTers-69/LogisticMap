@@ -138,7 +138,7 @@ function VillagePanel() {
 
     return (
         <div>
-            <h3 style={{ color: "#333", marginBottom: 10 }}>Сёла</h3>
+            <h3 className="sidebar-panel__title">Населённый пункт</h3>
 
             <div style={{
                 marginBottom: 10,

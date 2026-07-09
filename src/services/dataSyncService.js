@@ -11,7 +11,8 @@ import {
 
 function migrationApplied(migrated) {
     return migrated.hubAssignmentsFixed > 0
-        || migrated.logisticianAssignmentsFixed > 0;
+        || migrated.logisticianAssignmentsFixed > 0
+        || migrated.branchNamesRenamed > 0;
 }
 
 export async function resolveInitialData() {

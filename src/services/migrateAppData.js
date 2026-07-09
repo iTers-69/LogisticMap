@@ -14,6 +14,17 @@ function markManualBranches(branches) {
     }));
 }
 
+function renameExitBranchesToVetka(branches) {
+    let fixedCount = 0;
+    const updated = (branches ?? []).map(branch => {
+        const match = /^Выезд\s+(\d+)$/i.exec(branch.name ?? "");
+        if (!match) return branch;
+        fixedCount += 1;
+        return { ...branch, name: `Ветка ${match[1]}` };
+    });
+    return { branches: updated, fixedCount };
+}
+
 export function migrateAppData(data) {
     const normalized = normalizeAppData(data);
 
@@ -35,15 +46,18 @@ export function migrateAppData(data) {
         normalized.logisticians
     );
 
+    const { branches: renamedBranches, fixedCount: branchNamesRenamed } = renameExitBranchesToVetka(branches);
+
     return {
         data: {
             ...normalized,
             villages,
-            branches: markManualBranches(branches),
+            branches: markManualBranches(renamedBranches),
             logisticians
         },
         hubAssignmentsFixed: fixedCount,
-        logisticianAssignmentsFixed: logisticianFixedCount
+        logisticianAssignmentsFixed: logisticianFixedCount,
+        branchNamesRenamed
     };
 }
 

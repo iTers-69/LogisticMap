@@ -192,7 +192,7 @@ function RouteLayer() {
                             }}
                         >
                             <Popup>
-                                <strong>🚪 Выезд {displayBranch?.exitIndex ?? ""}</strong>
+                                <strong>🚪 Ветка {displayBranch?.exitIndex ?? ""}</strong>
                                 <br />
                                 Направление: {displayBranch?.exitBearing ?? "—"}°
                             </Popup>

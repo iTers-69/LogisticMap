@@ -368,19 +368,72 @@ body,
 }
 
 .route-panel__hubs-section {
-    flex: 0 0 auto;
-    max-height: 32%;
+    flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    margin-bottom: 8px;
 }
 
 .route-panel__hubs-list {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    margin-bottom: 4px;
+    padding-right: 2px;
+}
+
+.route-panel__hubs-list .hub-item--route {
+    margin-bottom: 6px;
+    cursor: default;
+}
+
+.hub-item--route .hub-item__header {
+    cursor: pointer;
+}
+
+.hub-item--route.active {
+    border-color: #fc912d;
+    background: #fff8f0;
+}
+
+.hub-item--route.active .hub-item__chevron--open {
+    color: #fc912d;
+}
+
+.hub-item__expand {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #e8eef5;
+}
+
+.hub-item__branches-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.hub-item__branches-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #444;
+}
+
+.hub-item__add-branch {
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: none;
+    background: #4caf50;
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.hub-item__branches {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .route-panel__rebuild {
@@ -388,25 +441,104 @@ body,
     margin-bottom: 10px;
 }
 
-.route-panel__branches-section {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
+.route-panel__rebuild--inline {
+    margin-bottom: 8px;
 }
 
-.route-panel__branches-header {
+.route-panel__rebuild--footer {
+    margin-top: 8px;
+    margin-bottom: 0;
+}
+
+.route-panel__rebuild-btn {
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 6px;
+    background: #8B1538;
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.route-panel__rebuild-all-btn {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: white;
+    color: #666;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.route-branch-card {
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-left-width: 4px;
+    color: #333;
+    font-size: 13px;
+}
+
+.route-branch-card--selected {
+    background: #e3f2fd;
+    border-color: #2196f3;
+    border-left-width: 4px;
+}
+
+.route-branch-card__top {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    margin-bottom: 8px;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.route-branch-card__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.route-branch-card__bearing {
+    color: #888;
+    margin-left: 6px;
+}
+
+.route-branch-card__meta {
+    font-size: 12px;
+    color: #666;
+}
+
+.route-branch-card__remove {
+    padding: 2px 8px;
+    border: none;
+    border-radius: 4px;
+    background: #ffebee;
+    color: #f44336;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1.4;
     flex-shrink: 0;
 }
 
-.route-panel__branches-list {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
+.route-branch-card__logistician {
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #777;
+}
+
+.route-branch-card__logistician select {
+    padding: 1px 4px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 11px;
+    background: white;
 }
 
 .route-panel__empty {
@@ -433,14 +565,68 @@ body,
     color:#1976d2;
 }
 
+.hub-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 56px - 32px);
+}
+
+.sidebar-panel__title {
+    margin: 0 0 12px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #fc912d;
+    color: #333;
+}
+
+
+.hub-panel__list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
 .hub-item {
-    margin-bottom: 12px;
-    padding: 8px;
+    margin-bottom: 8px;
+    padding: 10px 12px;
     border-radius: 8px;
     cursor: pointer;
     border: 1px solid #ddd;
     background: #fff;
     transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.hub-item__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.hub-item__name {
+    font-size: 14px;
+    line-height: 1.3;
+}
+
+.hub-item__chevron {
+    flex-shrink: 0;
+    color: #888;
+    font-size: 18px;
+    line-height: 1;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.hub-item__chevron--open {
+    transform: rotate(90deg);
+    color: #2d7ff9;
+}
+
+.hub-item__details {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #e8eef5;
+    font-size: 13px;
+    color: #555;
 }
 
 .hub-item:hover {
