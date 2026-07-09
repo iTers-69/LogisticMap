@@ -6,7 +6,7 @@ import { enrichBranch } from "../../utils/branchUtils";
 import { findVillageById } from "../../utils/villageId";
 import EditableRouteList from "./EditableRouteList";
 import BranchNameEditor from "../Sidebar/BranchNameEditor";
-import { getLogisticianStats } from "../../utils/logisticianStats";
+import { getLogisticianStats, getLogisticianHubNames } from "../../utils/logisticianStats";
 
 function EmptyInspector() {
     return <aside className="inspector inspector--empty" />;
@@ -198,6 +198,7 @@ function Inspector() {
                 <LogisticianInspector
                     logistician={selectedLogistician}
                     branches={branches}
+                    hubs={hubs}
                 />
             );
         }
@@ -226,8 +227,12 @@ function Inspector() {
 
 export default Inspector;
 
-function LogisticianInspector({ logistician, branches }) {
+function LogisticianInspector({ logistician, branches, hubs }) {
     const stats = getLogisticianStats(logistician, branches);
+    const hubNames = useMemo(
+        () => getLogisticianHubNames(logistician, branches, hubs),
+        [logistician, branches, hubs]
+    );
 
     return (
         <aside className="inspector">
@@ -236,11 +241,22 @@ function LogisticianInspector({ logistician, branches }) {
             <div className="logistician-card">
                 <div className="logistician-card__name">{logistician.name}</div>
 
-                <div className="logistician-card__stats">
-                    <div className="logistician-card__stat">
-                        <span className="logistician-card__stat-value">{stats.hubsCount}</span>
-                        <span className="logistician-card__stat-label">Хабов</span>
+                <div className="logistician-card__hubs">
+                    <div className="logistician-card__hubs-title">
+                        Хабы · {hubNames.length}
                     </div>
+                    {hubNames.length === 0 ? (
+                        <p className="logistician-card__hubs-empty">Нет назначенных хабов</p>
+                    ) : (
+                        <ul className="logistician-card__hubs-list">
+                            {hubNames.map(name => (
+                                <li key={name}>{name}</li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+
+                <div className="logistician-card__stats logistician-card__stats--compact">
                     <div className="logistician-card__stat">
                         <span className="logistician-card__stat-value">{stats.branchesCount}</span>
                         <span className="logistician-card__stat-label">Веток</span>

@@ -719,13 +719,54 @@ body,
     font-size: 22px;
     font-weight: 700;
     color: #111;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
+}
+
+.logistician-card__hubs {
+    margin-bottom: 14px;
+}
+
+.logistician-card__hubs-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 8px;
+}
+
+.logistician-card__hubs-empty {
+    margin: 0;
+    font-size: 13px;
+    color: #888;
+}
+
+.logistician-card__hubs-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.logistician-card__hubs-list li {
+    padding: 8px 10px;
+    background: #f8f9fb;
+    border: 1px solid #e3e8ef;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #222;
+    line-height: 1.3;
 }
 
 .logistician-card__stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
+}
+
+.logistician-card__stats--compact {
+    grid-template-columns: repeat(2, 1fr);
 }
 
 .logistician-card__stat {

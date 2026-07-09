@@ -6,6 +6,16 @@ export function getLogisticianStats(logistician, branches) {
     return {
         hubsCount: hubKatos.size,
         branchesCount: logBranches.length,
-        villagesCount: totalVillages
+        villagesCount: totalVillages,
+        hubKatos: [...hubKatos]
     };
+}
+
+export function getLogisticianHubNames(logistician, branches, hubs) {
+    const { hubKatos } = getLogisticianStats(logistician, branches);
+
+    return hubKatos
+        .map(kato => (hubs ?? []).find(h => h.kato === kato)?.name)
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, "ru"));
 }
